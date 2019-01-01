@@ -1,0 +1,5 @@
+{
+  "name": "mcone-usermanager",
+  "author": "Rufus Maiwald, Dominik Lippl",
+  "main": "eu.mcone.usermanager.UserManager"
+}
