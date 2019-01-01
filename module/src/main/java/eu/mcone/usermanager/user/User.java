@@ -35,7 +35,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
     @Getter
     private long onlinetime;
     @Getter
-    Map<String, String> permissions, userPermissions;
+    Map<String, String> permissionMap, userPermissions;
     @Getter
     private UserSettings settings;
     @Getter @Setter
@@ -64,7 +64,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
         );
 
         this.userPermissions = new HashMap<>();
-        this.permissions = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
+        this.permissionMap = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
     }
 
     public User(UUID uuid, String name, Set<Group> groups, int coins, int emeralds, Map<String, String> userPermissions, String teamspeakUid, String discordUid, PlayerState state, long onlinetime, UserSettings settings, String passwordHash, String mailAddress) {
@@ -82,7 +82,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
         this.mailAddress = mailAddress;
 
         this.userPermissions = userPermissions;
-        this.permissions = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
+        this.permissionMap = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
     }
 
     public void updateName(String newName) {
@@ -103,10 +103,9 @@ public class User implements eu.mcone.usermanager.api.user.User {
         return null;
     }
 
-    @Override
     public Set<String> getPermissions(String template) {
         Set<String> permissions = new HashSet<>();
-        for (Map.Entry<String, String> e : this.permissions.entrySet()) {
+        for (Map.Entry<String, String> e : this.permissionMap.entrySet()) {
             if (e.getValue() == null || e.getValue().equalsIgnoreCase(template)) {
                 permissions.add(e.getKey());
             }
@@ -116,7 +115,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
 
     @Override
     public Set<String> getAllPermissions() {
-        return new HashSet<>(permissions.keySet());
+        return new HashSet<>(permissionMap.keySet());
     }
 
     @Override

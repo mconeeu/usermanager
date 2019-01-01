@@ -15,7 +15,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 
-public class PermissionManager {
+public class PermissionManager implements eu.mcone.usermanager.api.user.PermissionManager {
 
     private MongoDatabase database;
 

@@ -1,5 +1,6 @@
 package eu.mcone.usermanager.api.user;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public interface User {
 
     long getOnlinetime();
 
-    Set<String> getPermissions();
+    Map<String, String> getPermissionMap();
 
     UserSettings getSettings();
 

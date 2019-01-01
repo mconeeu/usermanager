@@ -7,7 +7,7 @@ public class UserPermissionUpdateListener implements Listener<UserPermissionUpda
 
     @Override
     public void on(UserPermissionUpdateEvent e) {
-
+        //
     }
 
 }

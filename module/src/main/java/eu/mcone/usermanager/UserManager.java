@@ -5,8 +5,9 @@ import eu.mcone.networkmanager.core.api.database.Database;
 import eu.mcone.usermanager.api.user.PlayerState;
 import eu.mcone.usermanager.api.user.User;
 import eu.mcone.usermanager.api.user.UserSettings;
-import eu.mcone.usermanager.user.PermissionManager;
+import eu.mcone.usermanager.listener.UserPermissionUpdateListener;
 import eu.mcone.usermanager.user.MojangUtils;
+import eu.mcone.usermanager.user.PermissionManager;
 import lombok.Getter;
 import org.bson.Document;
 
@@ -30,6 +31,8 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
     public void onLoad() {
         setInstance(this);
         manager = this;
+
+        ModuleHost.getInstance().getEventManager().registerListener(new UserPermissionUpdateListener());
     }
 
     @Override
@@ -61,9 +64,7 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
     }
 
     @Override
-    public void onDisable() {
-
-    }
+    public void onDisable() {}
 
     @Override
     public User getUser(UUID uuid, String name) {
