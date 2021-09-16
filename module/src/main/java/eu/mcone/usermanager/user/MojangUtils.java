@@ -10,7 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mongodb.client.MongoCollection;
-import eu.mcone.networkmanager.core.api.database.MongoDatabase;
+import com.mongodb.client.MongoDatabase;
 import eu.mcone.usermanager.api.exception.MojangApiException;
 import org.bson.Document;
 

@@ -1,10 +1,12 @@
 package eu.mcone.usermanager.user;
 
 import com.mongodb.client.MongoCollection;
-import eu.mcone.networkmanager.api.ModuleHost;
-import eu.mcone.networkmanager.core.api.database.Database;
+import group.onegaming.networkmanager.core.api.database.Database;
+import group.onegaming.networkmanager.host.api.ModuleHost;
 import eu.mcone.usermanager.UserManager;
+import eu.mcone.usermanager.api.event.UserUpdateEvent;
 import eu.mcone.usermanager.api.user.Group;
+import eu.mcone.usermanager.api.user.GroupID;
 import eu.mcone.usermanager.api.user.PlayerState;
 import eu.mcone.usermanager.api.user.UserSettings;
 import lombok.Getter;
@@ -25,7 +27,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
     @Getter
     private UUID uuid;
     @Getter
-    private String name, teamspeakUid, discordUid, passwordHash, mailAddress;
+    private String name, teamspeakUid, discordUid, mailAddress;
     @Getter
     private int coins, emeralds;
     @Getter
@@ -35,7 +37,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
     @Getter
     private long onlinetime;
     @Getter
-    Map<String, String> permissionMap, userPermissions;
+    private Map<String, List<String>> permissionMap;
     @Getter
     private UserSettings settings;
     @Getter @Setter
@@ -44,7 +46,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
     public User(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
-        this.groups = new HashSet<>(Collections.singletonList(Group.SPIELER));
+        this.groups = new HashSet<>(Collections.singletonList(UserManager.getManager().getPermissionManager().getGroup(GroupID.SPIELER)));
         this.coins = 20;
         this.emeralds = 0;
         this.state = PlayerState.OFFLINE;
@@ -63,11 +65,11 @@ public class User implements eu.mcone.usermanager.api.user.User {
                         .append("online_time", onlinetime)
         );
 
-        this.userPermissions = new HashMap<>();
-        this.permissionMap = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
+        this.permissionMap = new HashMap<>();
+        updateGroupPermissions();
     }
 
-    public User(UUID uuid, String name, Set<Group> groups, int coins, int emeralds, Map<String, String> userPermissions, String teamspeakUid, String discordUid, PlayerState state, long onlinetime, UserSettings settings, String passwordHash, String mailAddress) {
+    public User(UUID uuid, String name, Set<Group> groups, int coins, int emeralds, Map<String, Object> permissions, String teamspeakUid, String discordUid, PlayerState state, long onlinetime, UserSettings settings, String mailAddress) {
         this.uuid = uuid;
         this.name = name;
         this.groups = groups;
@@ -78,11 +80,13 @@ public class User implements eu.mcone.usermanager.api.user.User {
         this.state = state;
         this.onlinetime = onlinetime;
         this.settings = settings;
-        this.passwordHash = passwordHash;
         this.mailAddress = mailAddress;
 
-        this.userPermissions = userPermissions;
-        this.permissionMap = UserManager.getManager().getPermissionManager().getPermissions(uuid, userPermissions, groups);
+        this.permissionMap = new HashMap<>();
+        for (Map.Entry<String, Object> e : permissions.entrySet()) {
+            permissionMap.put(e.getKey(), (ArrayList<String>) e.getValue());
+        }
+        updateGroupPermissions();
     }
 
     public void updateName(String newName) {
@@ -95,73 +99,120 @@ public class User implements eu.mcone.usermanager.api.user.User {
 
     @Override
     public Group getMainGroup() {
-        for (Group g : Group.values()) {
-            if (groups.contains(g)) return g;
+        Map<Integer, Group> groups = new HashMap<>();
+        for (Group g : this.groups) {
+            groups.put(g.getId(), g);
         }
 
-        log.severe("User " + name + " has no groups");
-        return null;
-    }
-
-    public Set<String> getPermissions(String template) {
-        Set<String> permissions = new HashSet<>();
-        for (Map.Entry<String, String> e : this.permissionMap.entrySet()) {
-            if (e.getValue() == null || e.getValue().equalsIgnoreCase(template)) {
-                permissions.add(e.getKey());
-            }
-        }
-        return permissions;
+        return Collections.min(groups.entrySet(), Map.Entry.comparingByKey()).getValue();
     }
 
     @Override
     public Set<String> getAllPermissions() {
-        return new HashSet<>(permissionMap.keySet());
+        return new HashSet<>(permissionMap.getOrDefault(":all", Collections.emptyList()));
     }
 
     @Override
-    public Set<String> getUserPermissions(String template) {
+    public Set<String> getTemplatePermissions(String template) {
         Set<String> permissions = new HashSet<>();
-        for (Map.Entry<String, String> e : this.userPermissions.entrySet()) {
-            if (e.getValue() == null || e.getValue().equalsIgnoreCase(template)) {
-                permissions.add(e.getKey());
+
+        for (Map.Entry<String, List<String>> e : this.permissionMap.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(template) || e.getKey().equals(":all")) {
+                permissions.addAll(e.getValue());
             }
         }
+
         return permissions;
     }
 
     @Override
-    public Set<String> getAllUserPermissions() {
-        return new HashSet<>(userPermissions.keySet());
-    }
-
-    @Override
     public boolean hasPermission(String permission) {
-        return UserManager.getManager().getPermissionManager().hasPermission(getAllPermissions(), permission);
+        return hasPermission(getAllPermissions(), permission);
     }
 
     @Override
     public boolean hasPermission(String permission, String template) {
-        return UserManager.getManager().getPermissionManager().hasPermission(getPermissions(template), permission);
+        return template != null ? hasPermission(getTemplatePermissions(template), permission) : hasPermission(permission);
+    }
+
+    private boolean hasPermission(Set<String> permissions, String permission) {
+        if(permissions.contains(permission) || permissions.contains("*") || permission == null) {
+            return true;
+        } else {
+            String[] permissionSplit = permission.replace('.', '-').split("-");
+            StringBuilder permConstrutor = new StringBuilder();
+            for(int i=0;i<permissionSplit.length-1;i++) {
+                permConstrutor.append(permConstrutor.toString().equals("") ? "" : ".").append(permissionSplit[i]);
+                if(permissions.contains(permConstrutor+".*")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
     public void addPermission(String permission) {
-        UserManager.getManager().getPermissionManager().addUserPermission(this, permission, null);
+        addPermission(permission, ":all");
     }
 
     @Override
     public void addPermission(String permission, String template) {
-        UserManager.getManager().getPermissionManager().addUserPermission(this, permission, template);
+        Set<String> permissions = template != null && !template.equalsIgnoreCase(":all") ? getTemplatePermissions(template) : getAllPermissions();
+
+        if (permissions.contains("-"+permission)) {
+            permissionMap.get(template).remove("-"+permission);
+            UserManager.getManager().getPermissionManager().removeDatabaseUserPermission(this, "-"+permission, template);
+        } else if (!permissions.contains(permission)) {
+            permissionMap.get(template).add(permission);
+            UserManager.getManager().getPermissionManager().addDatabaseUserPermission(this, permission, template);
+        }
+
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
     public void removePermission(String permission) {
-        UserManager.getManager().getPermissionManager().removeUserPermission(this, permission, null);
+        removePermission(permission, ":all");
     }
 
     @Override
     public void removePermission(String permission, String template) {
-        UserManager.getManager().getPermissionManager().removeUserPermission(this, permission, template);
+        Set<String> permissions = template != null && !template.equalsIgnoreCase(":all") ? getTemplatePermissions(template) : getAllPermissions();
+
+        if (permissions.contains(permission)) {
+            permissionMap.get(template).remove(permission);
+            UserManager.getManager().getPermissionManager().removeDatabaseUserPermission(this, permission, template);
+        } else if (!permissions.contains("-"+permission)) {
+            permissionMap.get(template).add("-"+permission);
+            UserManager.getManager().getPermissionManager().addDatabaseUserPermission(this, "-"+permission, template);
+        }
+
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
+    }
+
+    public void updateUserFromDatabase() {
+        Document entry = USERINFO.find(eq("uuid", uuid)).first();
+
+        this.groups = UserManager.getManager().getPermissionManager().getGroups(entry.get("groups", new ArrayList<>()));
+        this.coins = entry.getInteger("coins");
+        this.emeralds = entry.getInteger("emeralds");
+        this.teamspeakUid = entry.getString("teamspeak_uid");
+        this.discordUid = entry.getString("discord_uid");
+        this.state = PlayerState.getPlayerStateById(entry.getInteger("state"));
+        this.onlinetime = entry.getLong("online_time");
+        this.settings = ModuleHost.getInstance().getGson().fromJson(entry.get("player_settings", Document.class).toJson(), UserSettings.class);
+
+        this.permissionMap = new HashMap<>();
+        for (Map.Entry<String, Object> e : entry.get("permissions", Document.class).entrySet()) {
+            permissionMap.put(e.getKey(), (ArrayList<String>) e.getValue());
+        }
+
+        updateGroupPermissions();
+    }
+
+    public void updateGroupPermissions() {
+        this.permissionMap = UserManager.getManager().getPermissionManager().getPermissions(permissionMap, groups);
     }
 
     @Override
@@ -172,12 +223,15 @@ public class User implements eu.mcone.usermanager.api.user.User {
             this.coins = amount;
             USERINFO.updateOne(eq("uuid", uuid.toString()), set("coins", amount));
         }
+
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
     public void addCoins(int amount) {
         this.coins += amount;
         USERINFO.updateOne(eq("uuid", uuid.toString()), inc("coins", amount));
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
@@ -189,6 +243,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
 
         this.coins -= amount;
         USERINFO.updateOne(eq("uuid", uuid.toString()), inc("coins", -amount));
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
@@ -199,12 +254,15 @@ public class User implements eu.mcone.usermanager.api.user.User {
             this.coins = amount;
             USERINFO.updateOne(eq("uuid", uuid.toString()), set("emeralds", amount));
         }
+
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
     public void addEmeralds(int amount) {
         this.coins += amount;
         USERINFO.updateOne(eq("uuid", uuid.toString()), inc("emeralds", amount));
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
@@ -216,6 +274,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
 
         this.coins -= amount;
         USERINFO.updateOne(eq("uuid", uuid.toString()), inc("emeralds", -amount));
+        ModuleHost.getInstance().getEventManager().callEvent(UserManager.getManager(), new UserUpdateEvent(this));
     }
 
     @Override
@@ -236,7 +295,7 @@ public class User implements eu.mcone.usermanager.api.user.User {
 
     @Override
     public boolean isRegistered() {
-        return passwordHash != null;
+        return mailAddress != null;
     }
 
 }

@@ -1,6 +1,6 @@
 package eu.mcone.usermanager.user;
 
-import eu.mcone.networkmanager.core.api.util.Random;
+import group.onegaming.networkmanager.core.api.util.Random;
 
 import java.util.HashMap;
 import java.util.Map;

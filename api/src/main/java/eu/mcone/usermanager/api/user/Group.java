@@ -1,93 +1,43 @@
-/*
- * Copyright (c) 2017 - 2018 Dominik Lippl, Rufus Maiwald and the MC ONE Minecraftnetwork. All rights reserved
- * You are not allowed to decompile the code
- *
- */
-
 package eu.mcone.usermanager.api.user;
 
-import eu.mcone.usermanager.api.UserManager;
-import lombok.Getter;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public enum Group {
+public interface Group {
 
-    ADMIN(0, "Admin", "§c§oAdmin", "§8[§cA§8] §7", 10, -1),
-    DEVELOPER(1, "Developer", "§b§oDeveloper", "§8[§bDev§8] §7", 20, -1),
-    BUILDER(2, "Builder", "§e§oBuilder", "§8[§eB§8] §7", 30, -1),
-    SRMODERATOR(3, "SrModerator", "§2§oSrModerator", "§8[§2SrMod§8] §7", 35, -1),
-    MODERATOR(4, "Moderator", "§2§oModerator", "§8[§2Mod§8] §7", 40, -1),
-    SUPPORTER(5, "Supporter", "§a§oSupporter", "§8[§aSup§8] §7", 50, -1),
-    JRSUPPORTER(6, "JrSupporter", "§a§oJrSupporter", "§8[§aJrSup§8] §7", 55, -1),
-    TEAM(7, "Team", "§f§oTeam", "§8[§fTeam§8] §7", 1000, -1),
-    YOUTUBER(8, "YouTuber", "§5§oYoutuber", "§8[§5YT§8] §7", 60, 20),
-    PREMIUMPLUS(9, "Premium+", "§6§oPremium+", "§8[§6P+§8] §7", 70, 21),
-    PREMIUM(10, "Premium", "§6§oPremium", "§8[§6P§8] §7", 80, 22),
-    SPIELER(11, "Spieler", "§f§oSpieler", "§8[§fS§8] §7", 90, -1),
-    SPIELVERDERBER(12, "Spielverderber", "§8Spielverderber", "§8[§0SV§8] §8", 99, 32);
+    int getId();
 
-    @Getter
-    private int id, score, tsId;
-    @Getter
-    private String name, label, prefix;
+    int getTsId();
 
-    Group(int id, String name, String label, String prefix, int score, int tsId) {
-        this.id = id;
-        this.name = name;
-        this.label = label;
-        this.prefix = prefix;
-        this.score = score;
-        this.tsId = tsId;
-    }
+    String getName();
 
-    public static Group getGroupbyName(String name) {
-        for (Group group : values()) {
-            if (group.getName().equalsIgnoreCase(name)) {
-                return group;
-            }
-        }
-        return null;
-    }
+    String getPrefix();
 
-    public static Group getGroupById(int id) {
-        for (Group group : values()) {
-            if (group.getId() == id) {
-                return group;
-            }
-        }
-        return null;
-    }
+    String getColor();
 
-    public static Group getGroupByTsId(int tsId) {
-        for (Group group : Group.values()) {
-            if (group.getTsId() == tsId) {
-                return group;
-            }
-        }
-        return null;
-    }
+    Map<String, List<String>> getGroupPermissions();
 
-    public void addPermission(String permission) {
-        UserManager.getInstance().getPermissionManager().addGroupPermission(this, permission, null);
-    }
+    Set<String> getAllPermissions();
 
-    public void addPermission(String permission, String template) {
-        UserManager.getInstance().getPermissionManager().addGroupPermission(this, permission, template);
-    }
+    Set<String> getTemplatePermissions(String template);
 
-    public void removePermission(String permission) {
-        UserManager.getInstance().getPermissionManager().removeGroupPermission(this, permission, null);
-    }
+    Set<Group> getParents();
 
-    public void removePermission(String permission, String template) {
-        UserManager.getInstance().getPermissionManager().removeGroupPermission(this, permission, template);
-    }
+    Set<Group> getRecursiveParents();
 
-    public void addParent(Group parent) {
-        UserManager.getInstance().getPermissionManager().addParent(this, parent);
-    }
+    boolean hasParent(Group parent);
 
-    public void removeParent(Group parent) {
-        UserManager.getInstance().getPermissionManager().removeParent(this, parent);
-    }
+    void addPermission(String permission);
+
+    void addPermission(String permission, String template);
+
+    void removePermission(String permission);
+
+    void removePermission(String permission, String template);
+
+    void addParent(Group parent);
+
+    void removeParent(Group parent);
 
 }

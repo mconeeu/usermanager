@@ -40,14 +40,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>eu.mcone.cloud.master.MasterServer</mainClass>
-                        </transformer>
-                    </transformers>
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.projectlombok</groupId>
@@ -63,6 +55,12 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 
     <dependencies>
@@ -70,12 +68,6 @@
             <groupId>eu.mcone.usermanager</groupId>
             <artifactId>api</artifactId>
             <version>0.0.2-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-email</artifactId>
-            <version>1.5</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

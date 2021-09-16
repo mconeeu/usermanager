@@ -32,13 +32,9 @@ public interface User {
 
     Group getMainGroup();
 
-    Set<String> getPermissions(String template);
-
     Set<String> getAllPermissions();
 
-    Set<String> getUserPermissions(String template);
-
-    Set<String> getAllUserPermissions();
+    Set<String> getTemplatePermissions(String template);
 
     boolean hasPermission(String permission);
 

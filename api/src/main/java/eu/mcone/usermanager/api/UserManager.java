@@ -1,6 +1,6 @@
 package eu.mcone.usermanager.api;
 
-import eu.mcone.networkmanager.api.module.NetworkModule;
+import group.onegaming.networkmanager.host.api.module.NetworkModule;
 import eu.mcone.usermanager.api.user.PermissionManager;
 import eu.mcone.usermanager.api.user.User;
 import lombok.Getter;
@@ -23,5 +23,9 @@ public abstract class UserManager extends NetworkModule {
     public abstract PermissionManager getPermissionManager();
 
     public abstract User getUser(UUID uuid, String name);
+
+    public abstract User getOfflineUser(UUID uuid);
+
+    public abstract User getOfflineUser(String name);
 
 }

@@ -1,5 +1,6 @@
 {
   "name": "mcone-usermanager",
   "author": "Rufus Maiwald, Dominik Lippl",
-  "main": "eu.mcone.usermanager.UserManager"
+  "main": "eu.mcone.usermanager.UserManager",
+  "version": "${project.version}"
 }

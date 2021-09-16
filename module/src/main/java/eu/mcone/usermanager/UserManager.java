@@ -1,11 +1,18 @@
 package eu.mcone.usermanager;
 
-import eu.mcone.networkmanager.api.ModuleHost;
-import eu.mcone.networkmanager.core.api.database.Database;
+import group.onegaming.networkmanager.core.api.database.Database;
+import group.onegaming.networkmanager.host.api.ModuleHost;
+import eu.mcone.usermanager.api.messaging.URIs;
+import eu.mcone.usermanager.api.packet.GroupUpdateRequestPacket;
+import eu.mcone.usermanager.api.packet.UserInfoRequestPacket;
+import eu.mcone.usermanager.api.packet.UserInfoResponsePacket;
+import eu.mcone.usermanager.api.packet.UserUpdateRequestPacket;
 import eu.mcone.usermanager.api.user.PlayerState;
 import eu.mcone.usermanager.api.user.User;
 import eu.mcone.usermanager.api.user.UserSettings;
-import eu.mcone.usermanager.listener.UserPermissionUpdateListener;
+import eu.mcone.usermanager.listener.GroupUpdateRequestListener;
+import eu.mcone.usermanager.listener.UserRequestInfoListener;
+import eu.mcone.usermanager.listener.UserUpdateRequestListener;
 import eu.mcone.usermanager.user.MojangUtils;
 import eu.mcone.usermanager.user.PermissionManager;
 import lombok.Getter;
@@ -20,6 +27,7 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
 
     @Getter
     private static UserManager manager;
+    @Getter
     private Set<User> userCache;
 
     @Getter
@@ -32,7 +40,14 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
         setInstance(this);
         manager = this;
 
-        ModuleHost.getInstance().getEventManager().registerListener(new UserPermissionUpdateListener());
+        registerPacket(UserInfoResponsePacket.class);
+        registerPacket(UserInfoRequestPacket.class);
+        registerPacket(UserUpdateRequestPacket.class);
+        registerPacket(GroupUpdateRequestPacket.class);
+
+        registerClientMessageListener(URIs.USER_UPDATE, new UserUpdateRequestListener());
+        registerClientMessageListener(URIs.USER_REQUEST_INFO, new UserRequestInfoListener());
+        registerClientMessageListener(URIs.GROUP_UPDATE, new GroupUpdateRequestListener());
     }
 
     @Override
@@ -50,13 +65,12 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
                             UserManager.getManager().getPermissionManager().getGroups(entry.get("groups", new ArrayList<>())),
                             entry.getInteger("coins"),
                             entry.getInteger("emeralds"),
-                            PermissionManager.getServerPermissionsFromDocument(entry),
+                            entry.get("permissions", Document.class),
                             entry.getString("teamspeak_uid"),
                             entry.getString("discord_uid"),
                             PlayerState.getPlayerStateById(entry.getInteger("state")),
                             entry.getLong("online_time"),
                             ModuleHost.getInstance().getGson().fromJson(entry.get("player_settings", Document.class).toJson(), UserSettings.class),
-                            entry.getString("password"),
                             entry.getString("email")
                     )
             );
@@ -86,4 +100,23 @@ public class UserManager extends eu.mcone.usermanager.api.UserManager {
         }
     }
 
+    @Override
+    public User getOfflineUser(UUID uuid) {
+        for (User u : userCache) {
+            if (u.getUuid().equals(uuid)) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public User getOfflineUser(String name) {
+        for (User u : userCache) {
+            if (u.getName().equalsIgnoreCase(name)) {
+                return u;
+            }
+        }
+        return null;
+    }
 }
