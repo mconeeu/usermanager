@@ -35,6 +35,7 @@
         <name>MC ONE</name>
         <url>https://www.mcone.eu</url>
     </organization>
+
     <modules>
         <module>module</module>
         <module>api</module>
@@ -42,9 +43,8 @@
 
     <repositories>
         <repository>
-            <id>mcone-systems</id>
-            <name>MC ONE Repo</name>
-            <url>https://repo.mcone.eu/repository/mcone-systems/</url>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/mconeeu/artifacts</url>
         </repository>
     </repositories>
 
@@ -61,14 +61,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>mcone-systems</id>
-            <name>MC ONE Repo</name>
-            <url>https://repo.mcone.eu/repository/mcone-systems/</url>
-        </repository>
-    </distributionManagement>
 
     <dependencies>
         <dependency>
